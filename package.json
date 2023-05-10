@@ -1,0 +1,13 @@
+{
+  "name": "hardhat-project",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.8.3",
+    "@openzeppelin/merkle-tree": "^1.0.4",
+    "hardhat": "^2.14.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  }
+}

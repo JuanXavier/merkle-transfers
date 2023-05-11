@@ -3,13 +3,10 @@ pragma solidity 0.8.19;
 
 /**
  *Bob (owner) has to pay bonuses to his employees. These are going to be paid in an ERC20 he decides.
- *The problem is that Bob doesn't want to send those transactions manually, instead is hiring executor to do that. 
- * Since Bob doesn't trust executor,Bob plans to commit a merkle proof to a smart contract consisting of all the 
+ *The problem is that Bob doesn't want to send those transactions manually, instead is hiring executor to do that.
+ * Since Bob doesn't trust executor,Bob plans to commit a merkle proof to a smart contract consisting of all the
  * 100 transactions he needs to send. Bob will also pre-fund the smart contract with enough tokens to pay
  * all those transactions. executor has to be able to execute those transactions using the merkle proof committed by Bob.
- *   question:
- *  What data does Bob gives to alice?/ What data does alice need ?
-    // must generate a proof for every address and every amount?
  */
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
@@ -64,6 +61,11 @@ contract MerkleTransfers {
         token.transfer(recipient, amount);
     }
 
+    /**
+     * todo:
+     * use multiProofVerify from MerkleProof library
+     * understand proofFlags
+     */
     function multiProofTransfer(
         address[] memory recipients,
         uint256[] memory amounts,

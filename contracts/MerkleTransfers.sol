@@ -17,13 +17,14 @@ import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerklePr
 contract MerkleTransfers {
     error InvalidProof();
     error Unauthorized();
+    error AlreadyExecutedTransfer(address recipient);
 
-    address internal immutable owner;
-    address internal immutable executor;
     IERC20 internal token;
-
+    address internal immutable owner;
+    address internal executor;
     bytes32 public merkleRoot;
-    mapping(uint256 => bool) public executedTransfers;
+
+    mapping(bytes32 merkleRoot => mapping(address recipient => bool paid)) public executedTransfers;
 
     constructor(address _executor, address _token) {
         owner = msg.sender;
@@ -31,30 +32,67 @@ contract MerkleTransfers {
         token = IERC20(_token);
     }
 
-    function submitMerkleRoot(bytes32 _merkleRoot) external {
+    function _onlyOwner() internal view {
         if (msg.sender != owner) revert Unauthorized();
+    }
+
+    /* ------------------------ OWNER ----------------------- */
+
+    function changeMerkleRoot(bytes32 _merkleRoot) external {
+        _onlyOwner();
         merkleRoot = _merkleRoot;
     }
 
-    /**
-["0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db", "0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB"]
-[10,25]
-[["0xc541a6bdd55352497fe5adde464069ae25ede524a2ac975d3897b077b7931231"],["0xb86ca9aba3f0da76df0f4f1bfc7833b7b24d425b086935475871ff2b4fc57c08"]]
- */
-    // I get the invalidProof error
-    function executeTransfers(
+    function changeExecutor(address _newExecutor) external {
+        _onlyOwner();
+        executor = _newExecutor;
+    }
+
+    function changeToken(address _newToken) external {
+        _onlyOwner();
+        token = IERC20(_newToken);
+    }
+
+    /* ---------------------- EXECUTOR ---------------------- */
+
+    function singleTransfer(address recipient, uint256 amount, bytes32[] memory proof) external {
+        if (msg.sender != executor) revert Unauthorized();
+        if (executedTransfers[merkleRoot][recipient]) revert AlreadyExecutedTransfer(recipient);
+        bytes32 leaf = keccak256(abi.encodePacked(recipient, amount));
+        if (!MerkleProof.verify(proof, merkleRoot, leaf)) revert InvalidProof();
+        executedTransfers[merkleRoot][recipient] = true;
+        token.transfer(recipient, amount);
+    }
+
+    function multiProofTransfer(
         address[] memory recipients,
         uint256[] memory amounts,
         bytes32[][] memory proofs
     ) external {
         if (msg.sender != executor) revert Unauthorized();
-
         unchecked {
             for (uint256 i; i < recipients.length; ++i) {
                 bytes32 leaf = keccak256(abi.encodePacked(recipients[i], amounts[i]));
                 if (!MerkleProof.verify(proofs[i], merkleRoot, leaf)) revert InvalidProof();
+                if (executedTransfers[merkleRoot][recipients[i]]) revert AlreadyExecutedTransfer(recipients[i]);
+                executedTransfers[merkleRoot][recipients[i]] = true;
                 token.transfer(recipients[i], amounts[i]);
             }
         }
+    }
+
+    /* ---------------------- VIEW ONLY --------------------- */
+
+    function makeLeaf(address recipient, uint256 amount) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(recipient, amount));
+    }
+
+    function verifyWithLeaf(bytes32[] memory proof, bytes32 leaf) external view returns (bool) {
+        return MerkleProof.verify(proof, merkleRoot, leaf);
+    }
+
+    function verifyProof(address recipient, uint256 amount, bytes32[] memory proof) external view returns (bool) {
+        bytes32 leaf = makeLeaf(recipient, amount);
+        return MerkleProof.verify(proof, merkleRoot, leaf);
     }
 }

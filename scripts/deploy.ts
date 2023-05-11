@@ -1,24 +1,16 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
-  const lockedAmount = ethers.utils.parseEther("0.001");
+  const WETH9 = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
+  let executor;
+  [, executor] = await ethers.getSigners();
 
-  const Lock = await ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  const MerkleTransfers = await ethers.getContractFactory("MerkleTransfers");
+  const merkleTransfers = await (await MerkleTransfers.deploy(executor.address, WETH9)).deployed();
 
-  await lock.deployed();
-
-  console.log(
-    `Lock with ${ethers.utils.formatEther(lockedAmount)}ETH and unlock timestamp ${unlockTime} deployed to ${
-      lock.address
-    }`
-  );
+  console.log(`Merkle deployed to ${merkleTransfers.address}`);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;

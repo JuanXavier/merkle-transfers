@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+
 /**
  *Bob (owner) has to pay bonuses to his employees. These are going to be paid in an ERC20 he decides.
  *The problem is that Bob doesn't want to send those transactions manually, instead is hiring executor to do that.
@@ -8,9 +11,6 @@ pragma solidity 0.8.19;
  * 100 transactions he needs to send. Bob will also pre-fund the smart contract with enough tokens to pay
  * all those transactions. executor has to be able to execute those transactions using the merkle proof committed by Bob.
  */
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-
 contract MerkleTransfers {
     error InvalidProof();
     error Unauthorized();
@@ -62,9 +62,8 @@ contract MerkleTransfers {
     }
 
     /**
-     * todo:
+     * Alternative:
      * use multiProofVerify from MerkleProof library
-     * understand proofFlags
      */
     function multiProofTransfer(
         address[] memory recipients,

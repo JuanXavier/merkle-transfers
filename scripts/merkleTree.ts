@@ -46,8 +46,6 @@ const proofs = Object.entries(TransferData).map(([address, amount]) => {
 const amounts = Object.values(TransferData).map(Number);
 const addresses = Object.keys(TransferData).map((address) => address);
 
-/****************************************** */
-
 const admin = {
   root: tree.getHexRoot(),
 };
@@ -59,6 +57,7 @@ const executor = {
 };
 fs.writeFileSync("data/admin.json", JSON.stringify(admin));
 fs.writeFileSync("data/executor.json", JSON.stringify(executor));
+fs.writeFileSync("data/tree.json", JSON.stringify(tree));
 
 /* ----------------------- LOGGING ---------------------- */
 

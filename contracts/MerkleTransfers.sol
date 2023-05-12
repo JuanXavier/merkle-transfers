@@ -11,6 +11,8 @@ import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerklePr
  * 100 transactions he needs to send. Bob will also pre-fund the smart contract with enough tokens to pay
  * all those transactions. executor has to be able to execute those transactions using the merkle proof committed by Bob.
  */
+
+//todo emit Events
 contract MerkleTransfers {
     error InvalidProof();
     error Unauthorized();

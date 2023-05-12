@@ -16,6 +16,7 @@ import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerklePr
 contract MerkleTransfers {
     error InvalidProof();
     error Unauthorized();
+    error ArrayLengthMismatch();
     error AlreadyExecutedTransfer(address recipient);
 
     IERC20 internal token;
@@ -73,6 +74,8 @@ contract MerkleTransfers {
         bytes32[][] memory proofs
     ) external {
         if (msg.sender != executor) revert Unauthorized();
+        if (recipients.length != amounts.length || amounts.length != proofs.length) revert ArrayLengthMismatch();
+
         unchecked {
             for (uint256 i; i < recipients.length; ++i) {
                 bytes32 leaf = keccak256(abi.encodePacked(recipients[i], amounts[i]));

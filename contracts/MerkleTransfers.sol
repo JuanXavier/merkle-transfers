@@ -5,8 +5,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 /**
- *Bob (owner) has to pay bonuses to his employees. These are going to be paid in an ERC20 he decides.
- *The problem is that Bob doesn't want to send those transactions manually, instead is hiring executor to do that.
+ * Bob (owner) has to pay bonuses to his employees. These are going to be paid in an ERC20 he decides.
+ * The problem is that Bob doesn't want to send those transactions manually, instead is hiring executor to do that.
  * Since Bob doesn't trust executor,Bob plans to commit a merkle proof to a smart contract consisting of all the
  * 100 transactions he needs to send. Bob will also pre-fund the smart contract with enough tokens to pay
  * all those transactions. executor has to be able to execute those transactions using the merkle proof committed by Bob.
@@ -19,9 +19,9 @@ contract MerkleTransfers {
     error ArrayLengthMismatch();
     error AlreadyExecutedTransfer(address recipient);
 
-    IERC20 internal token;
-    address internal immutable owner;
-    address internal executor;
+    IERC20 public token;
+    address public immutable owner;
+    address public executor;
     bytes32 public merkleRoot;
 
     mapping(bytes32 merkleRoot => mapping(address recipient => bool paid)) public executedTransfers;
@@ -55,13 +55,13 @@ contract MerkleTransfers {
 
     /* ---------------------- EXECUTOR ---------------------- */
 
-    function singleTransfer(address recipient, uint256 amount, bytes32[] memory proof) external {
+    function singleTransfer(address recipient, uint256 amount, bytes32[] memory proof) external returns (bool) {
         if (msg.sender != executor) revert Unauthorized();
         if (executedTransfers[merkleRoot][recipient]) revert AlreadyExecutedTransfer(recipient);
         bytes32 leaf = keccak256(abi.encodePacked(recipient, amount));
         if (!MerkleProof.verify(proof, merkleRoot, leaf)) revert InvalidProof();
         executedTransfers[merkleRoot][recipient] = true;
-        token.transfer(recipient, amount);
+        return token.transfer(recipient, amount);
     }
 
     /**
@@ -72,7 +72,7 @@ contract MerkleTransfers {
         address[] memory recipients,
         uint256[] memory amounts,
         bytes32[][] memory proofs
-    ) external {
+    ) external returns (bool) {
         if (msg.sender != executor) revert Unauthorized();
         if (recipients.length != amounts.length || amounts.length != proofs.length) revert ArrayLengthMismatch();
 
@@ -85,6 +85,7 @@ contract MerkleTransfers {
                 token.transfer(recipients[i], amounts[i]);
             }
         }
+        return true;
     }
 
     /* ---------------------- VIEW ONLY --------------------- */

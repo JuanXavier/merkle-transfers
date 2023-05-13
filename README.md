@@ -24,10 +24,10 @@ npx hardhat run .\scripts\merkleTree.ts
 
 This will create three files inside the `data` folder, an `admin.json` and `executor.json`, each one for the data that each individual requires for the following steps, and a `tree.json` containing the whole merkle tree.
 
-3. Run the following command to "deploy" locally and make sure everything works.
+3. Run the following command to "test" locally and make sure everything works.
 
 ```
-npx hardhat run .\scripts\deploy.ts
+npx hardhat test
 ```
 
 This will read from the newly created files `admin.json` and `executor.json`.

@@ -106,7 +106,6 @@ describe("Merkle Multi Transfers", async function () {
       expect(await this.token.balanceOf(addresses[5])).to.be.eq(String(amounts[5]))
       expect(await this.token.balanceOf(addresses[6])).to.be.eq(String(amounts[6]))
       expect(await this.token.balanceOf(addresses[7])).to.be.eq(String(amounts[7]))
-      console.log("Contract balance after multitransfer: ", merkleTransfersBalance)
     })
 
     it("Executor can NOT make duplicated transfers", async function () {

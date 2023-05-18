@@ -19,6 +19,8 @@ contract MerkleTransfers {
     error ArrayLengthMismatch();
     error AlreadyExecutedTransfer(address recipient);
 
+    event FailedTransfer(address);
+
     IERC20 public token;
     address public immutable owner;
     address public executor;
@@ -34,6 +36,10 @@ contract MerkleTransfers {
 
     function _onlyOwner() internal view {
         if (msg.sender != owner) revert Unauthorized();
+    }
+
+    function _onlyExecutor() internal view {
+        if (msg.sender != executor) revert Unauthorized();
     }
 
     /* ------------------------ OWNER ----------------------- */
@@ -56,35 +62,28 @@ contract MerkleTransfers {
     /* ---------------------- EXECUTOR ---------------------- */
 
     function singleTransfer(address recipient, uint256 amount, bytes32[] memory proof) external returns (bool) {
-        if (msg.sender != executor) revert Unauthorized();
-        if (executedTransfers[merkleRoot][recipient]) revert AlreadyExecutedTransfer(recipient);
-        bytes32 leaf = keccak256(abi.encodePacked(recipient, amount));
-        if (!MerkleProof.verify(proof, merkleRoot, leaf)) revert InvalidProof();
-        executedTransfers[merkleRoot][recipient] = true;
-        return token.transfer(recipient, amount);
+        return _executeTransfer(recipient, amount, proof);
     }
 
-    /**
-     * Alternative:
-     * use multiProofVerify from MerkleProof library
-     */
     function multiProofTransfer(
         address[] memory recipients,
         uint256[] memory amounts,
         bytes32[][] memory proofs
     ) external returns (bool) {
-        if (msg.sender != executor) revert Unauthorized();
         if (recipients.length != amounts.length || amounts.length != proofs.length) revert ArrayLengthMismatch();
-
         unchecked {
-            for (uint256 i; i < recipients.length; ++i) {
-                bytes32 leaf = keccak256(abi.encodePacked(recipients[i], amounts[i]));
-                if (!MerkleProof.verify(proofs[i], merkleRoot, leaf)) revert InvalidProof();
-                if (executedTransfers[merkleRoot][recipients[i]]) revert AlreadyExecutedTransfer(recipients[i]);
-                executedTransfers[merkleRoot][recipients[i]] = true;
-                token.transfer(recipients[i], amounts[i]);
-            }
+            for (uint256 i; i < recipients.length; ++i) _executeTransfer(recipients[i], amounts[i], proofs[i]);
         }
+        return true;
+    }
+
+    function _executeTransfer(address recipient, uint256 amount, bytes32[] memory proof) internal returns (bool) {
+        _onlyExecutor();
+        if (executedTransfers[merkleRoot][recipient]) revert AlreadyExecutedTransfer(recipient);
+        bytes32 leaf = keccak256(abi.encodePacked(recipient, amount));
+        if (!MerkleProof.verify(proof, merkleRoot, leaf)) revert InvalidProof();
+        if (token.transfer(recipient, amount)) executedTransfers[merkleRoot][recipient] = true;
+        else emit FailedTransfer(recipient);
         return true;
     }
 
